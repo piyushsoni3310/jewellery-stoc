@@ -1,0 +1,11 @@
+{
+  "name": "Jewellery Stock Manager",
+  "short_name": "Jewellery Stock",
+  "description": "सोना और चांदी का स्टॉक मैनेजर",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f5f6f8",
+  "theme_color": "#173b67",
+  "orientation": "portrait",
+  "icons": []
+}
