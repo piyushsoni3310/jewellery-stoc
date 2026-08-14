@@ -1,4 +1,4 @@
-const CACHE_NAME = "jewellery-stock-v2";
+const CACHE_NAME = "jewellery-stock-v3";
 
 const FILES_TO_CACHE = [
   "./",
