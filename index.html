@@ -378,7 +378,150 @@ const money=n=>
 
 
 const grams=n=>
- Number(n||0).toFixed(3)+" g";
+ Number(n||0).toFixed(3)+" g" 
+ function formatDateTime(date){
+ const d=new Date(date);
+
+ return d.toLocaleString("en-IN",{
+  day:"2-digit",
+  month:"2-digit",
+  year:"numeric",
+  hour:"2-digit",
+  minute:"2-digit",
+  hour12:true
+ });
+}
+
+
+function localDateTimeValue(date){
+ const d=new Date(date);
+
+ const pad=n=>String(n).padStart(2,"0");
+
+ return d.getFullYear()+"-"+
+  pad(d.getMonth()+1)+"-"+
+  pad(d.getDate())+"T"+
+  pad(d.getHours())+":"+
+  pad(d.getMinutes());
+}
+
+
+/* DATE / TIME EDIT */
+
+function editEntry(code,index){
+
+ const item=db.items.find(
+  x=>String(x.code).toUpperCase()===code.toUpperCase()
+ );
+
+ if(!item || !item.entries || !item.entries[index]){
+  alert("Entry नहीं मिली।");
+  return;
+ }
+
+ const entry=item.entries[index];
+
+ const current=localDateTimeValue(entry.dateTime);
+
+ const newDateTime=prompt(
+  "Date और Time बदलें।\n\n"+
+  "Format: YYYY-MM-DDTHH:MM\n"+
+  "उदाहरण: 2026-08-20T07:30",
+  current
+ );
+
+ if(!newDateTime)return;
+
+ const newDate=new Date(newDateTime);
+
+ if(isNaN(newDate.getTime())){
+  alert("❌ Date/Time सही Format में डालें।");
+  return;
+ }
+
+ entry.dateTime=newDate.toISOString();
+
+ save();
+
+ alert("✅ Date और Time अपडेट हो गया।");
+}
+
+
+/* SINGLE ENTRY DELETE */
+
+function deleteEntry(code,index){
+
+ const item=db.items.find(
+  x=>String(x.code).toUpperCase()===code.toUpperCase()
+ );
+
+ if(!item || !item.entries || !item.entries[index]){
+  alert("Entry नहीं मिली।");
+  return;
+ }
+
+ const entry=item.entries[index];
+
+ const ok=confirm(
+  "क्या आप इस Entry को Delete करना चाहते हैं?\n\n"+
+  "Qty: "+entry.qty+
+  "\nNet: "+grams(entry.net)+
+  "\nDate: "+formatDateTime(entry.dateTime)
+ );
+
+ if(!ok)return;
+
+
+ item.qty=
+  Math.max(0,Number(item.qty||0)-Number(entry.qty||0));
+
+ item.gross=
+  Math.max(0,Number(item.gross||0)-Number(entry.gross||0));
+
+ item.net=
+  Math.max(0,Number(item.net||0)-Number(entry.net||0));
+
+
+ item.entries.splice(index,1);
+
+ save();
+
+ alert("🗑️ Entry Delete हो गई।");
+}
+
+
+/* COMPLETE ITEM DELETE */
+
+function deleteItem(code){
+
+ const index=db.items.findIndex(
+  x=>String(x.code).toUpperCase()===code.toUpperCase()
+ );
+
+ if(index===-1){
+  alert("Item नहीं मिला।");
+  return;
+ }
+
+ const item=db.items[index];
+
+ const ok=confirm(
+  "⚠️ क्या आप पूरा Item Delete करना चाहते हैं?\n\n"+
+  "Code: "+item.code+
+  "\nName: "+item.name+
+  "\nQty: "+item.qty+
+  "\nNet: "+grams(item.net)+
+  "\n\nयह पूरा Item और उसकी Entry History Delete कर देगा।"
+ );
+
+ if(!ok)return;
+
+ db.items.splice(index,1);
+
+ save();
+
+ alert("🗑️ पूरा Item Delete हो गया।");
+}
 
 
 function show(id,btn){
