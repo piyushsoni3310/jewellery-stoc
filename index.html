@@ -1123,60 +1123,153 @@ function render(){
  .innerHTML=salesHTML();
 
 
- document.getElementById("itemLibrary")
- .innerHTML=
+document.getElementById("itemLibrary").innerHTML=
 
- db.items.length
+db.items.length
 
- ?
+?
 
- `<div class="tablewrap">
+db.items.map(x=>{
 
- <table>
-
- <tr>
- <th>Code</th>
- <th>नाम</th>
- <th>धातु</th>
- <th>Purity</th>
- <th>Qty</th>
- <th>Net</th>
- <th>Rate</th>
- </tr>
-
- ${
- db.items.map(x=>`
-
- <tr>
-
- <td><b>${x.code}</b></td>
-
- <td>${x.name}</td>
-
- <td>
- ${x.metal==="Gold"?"🟡 सोना":"⚪ चाँदी"}
- </td>
-
- <td>${x.purity}</td>
-
- <td><b>${x.qty}</b></td>
-
- <td>${grams(x.net)}</td>
-
- <td>${money(x.sell)}</td>
-
- </tr>
-
- `).join("")
+ if(!Array.isArray(x.entries)){
+  x.entries=[];
  }
 
- </table>
+ return `
 
- </div>`
+ <div class="card" style="margin-bottom:14px">
 
- :
+  <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
 
- '<div class="empty">अभी कोई Item सेव नहीं है।</div>';
+   <div>
+    <b style="font-size:17px">
+     ${x.code} — ${x.name}
+    </b>
+
+    <br>
+
+    <small>
+     ${x.metal==="Gold"?"🟡 सोना":"⚪ चाँदी"}
+     · ${x.purity}
+    </small>
+   </div>
+
+   <button
+    onclick="deleteItem('${x.code}')"
+    style="
+     border:0;
+     padding:7px 9px;
+     border-radius:8px;
+     background:#d32f2f;
+     color:white;
+    "
+   >
+    🗑️ Delete Item
+   </button>
+
+  </div>
+
+
+  <hr>
+
+
+  <b>कुल Stock</b>
+
+  <br>
+
+  Qty: <b>${x.qty}</b>
+
+  · Gross: <b>${grams(x.gross)}</b>
+
+  · Net: <b>${grams(x.net)}</b>
+
+
+  <h3 style="margin:14px 0 8px">
+   📋 Entry History
+  </h3>
+
+
+  ${
+   x.entries.length
+
+   ?
+
+   x.entries.map((e,i)=>`
+
+    <div style="
+     background:#f5f6f8;
+     padding:11px;
+     border-radius:10px;
+     margin-top:8px;
+    ">
+
+     <b>Entry ${i+1}</b>
+
+     <br>
+
+     📅 <b>${formatDateTime(e.dateTime)}</b>
+
+     <br>
+
+     Qty:
+     <b>${e.qty}</b>
+
+     · Gross:
+     <b>${grams(e.gross)}</b>
+
+     · Net:
+     <b>${grams(e.net)}</b>
+
+     <br>
+
+
+     <button
+      onclick="editEntry('${x.code}',${i})"
+      style="
+       margin-top:8px;
+       border:0;
+       padding:7px 10px;
+       border-radius:8px;
+       background:#17365d;
+       color:white;
+      "
+     >
+      ✏️ Date/Time Edit
+     </button>
+
+
+     <button
+      onclick="deleteEntry('${x.code}',${i})"
+      style="
+       margin-top:8px;
+       border:0;
+       padding:7px 10px;
+       border-radius:8px;
+       background:#d32f2f;
+       color:white;
+      "
+     >
+      🗑️ Delete Entry
+     </button>
+
+    </div>
+
+   `).join("")
+
+   :
+
+   '<small>पुरानी Entry History उपलब्ध नहीं है।</small>'
+  }
+
+ </div>
+
+ `;
+
+}).join("")
+
+:
+
+'<div class="empty">अभी कोई Item सेव नहीं है।</div>';
 
 
  document.getElementById("recent")
