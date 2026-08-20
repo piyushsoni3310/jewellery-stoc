@@ -448,7 +448,7 @@ function editEntry(code,index){
 }
 
 
-/* SINGLE ENTRY DELETE */
+/* SINGLE ENTRY DELETE — SAFE VERSION */
 
 function deleteEntry(code,index){
 
@@ -456,7 +456,7 @@ function deleteEntry(code,index){
   x=>String(x.code).toUpperCase()===code.toUpperCase()
  );
 
- if(!item || !item.entries || !item.entries[index]){
+ if(!item || !Array.isArray(item.entries) || !item.entries[index]){
   alert("Entry नहीं मिली।");
   return;
  }
@@ -466,28 +466,47 @@ function deleteEntry(code,index){
  const ok=confirm(
   "क्या आप इस Entry को Delete करना चाहते हैं?\n\n"+
   "Qty: "+entry.qty+
+  "\nGross: "+grams(entry.gross)+
   "\nNet: "+grams(entry.net)+
-  "\nDate: "+formatDateTime(entry.dateTime)
+  "\nDate: "+formatDateTime(entry.dateTime)+
+  "\n\n⚠️ यह Entry History से हट जाएगी और Stock से भी घटेगी।"
  );
 
  if(!ok)return;
 
 
- item.qty=
-  Math.max(0,Number(item.qty||0)-Number(entry.qty||0));
+ /* Entry का Stock वापस घटाएँ */
 
- item.gross=
-  Math.max(0,Number(item.gross||0)-Number(entry.gross||0));
+ item.qty =
+  Math.max(
+   0,
+   Number(item.qty||0)-Number(entry.qty||0)
+  );
 
- item.net=
-  Math.max(0,Number(item.net||0)-Number(entry.net||0));
+ item.gross =
+  Math.max(
+   0,
+   Number(item.gross||0)-Number(entry.gross||0)
+  );
 
+ item.net =
+  Math.max(
+   0,
+   Number(item.net||0)-Number(entry.net||0)
+  );
+
+
+ /* Entry History से Delete */
 
  item.entries.splice(index,1);
 
+
+ /* Data Save */
+
  save();
 
- alert("🗑️ Entry Delete हो गई।");
+
+ alert("🗑️ Entry सफलतापूर्वक Delete हो गई।");
 }
 
 
