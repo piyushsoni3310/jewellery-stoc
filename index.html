@@ -447,8 +447,7 @@ function editEntry(code,index){
  alert("✅ Date और Time अपडेट हो गया।");
 }
 
-
-/* SINGLE ENTRY DELETE — SAFE VERSION */
+/* SINGLE ENTRY DELETE */
 
 function deleteEntry(code,index){
 
@@ -456,58 +455,30 @@ function deleteEntry(code,index){
   x=>String(x.code).toUpperCase()===code.toUpperCase()
  );
 
- if(!item || !Array.isArray(item.entries) || !item.entries[index]){
+ if(!item || !item.entries || !item.entries[index]){
   alert("Entry नहीं मिली।");
   return;
  }
 
  const entry=item.entries[index];
 
- const ok=confirm(
-  "क्या आप इस Entry को Delete करना चाहते हैं?\n\n"+
+ if(!confirm(
+  "क्या इस Entry को Delete करना है?\n\n"+
   "Qty: "+entry.qty+
   "\nGross: "+grams(entry.gross)+
-  "\nNet: "+grams(entry.net)+
-  "\nDate: "+formatDateTime(entry.dateTime)+
-  "\n\n⚠️ यह Entry History से हट जाएगी और Stock से भी घटेगी।"
- );
+  "\nNet: "+grams(entry.net)
+ )) return;
 
- if(!ok)return;
-
-
- /* Entry का Stock वापस घटाएँ */
-
- item.qty =
-  Math.max(
-   0,
-   Number(item.qty||0)-Number(entry.qty||0)
-  );
-
- item.gross =
-  Math.max(
-   0,
-   Number(item.gross||0)-Number(entry.gross||0)
-  );
-
- item.net =
-  Math.max(
-   0,
-   Number(item.net||0)-Number(entry.net||0)
-  );
-
-
- /* Entry History से Delete */
+ item.qty=Math.max(0,Number(item.qty||0)-Number(entry.qty||0));
+ item.gross=Math.max(0,Number(item.gross||0)-Number(entry.gross||0));
+ item.net=Math.max(0,Number(item.net||0)-Number(entry.net||0));
 
  item.entries.splice(index,1);
 
-
- /* Data Save */
-
  save();
 
-
- alert("🗑️ Entry सफलतापूर्वक Delete हो गई।");
-}
+ alert("🗑️ Entry Delete हो गई।");
+   }
 
 
 /* COMPLETE ITEM DELETE */
