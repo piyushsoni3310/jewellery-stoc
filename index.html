@@ -674,9 +674,18 @@ document.getElementById("itemForm").onsubmit=e=>{
 
    net:netValue,
 
-   buy:buyValue,
+    buy:buyValue,
 
-   sell:sellValue
+   sell:sellValue,
+
+   entries:[{
+    dateTime:new Date().toISOString(),
+    qty:qtyValue,
+    gross:grossValue,
+    net:netValue,
+    buy:buyValue,
+    sell:sellValue
+   }]
 
   });
 
