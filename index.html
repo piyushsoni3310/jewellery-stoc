@@ -591,6 +591,18 @@ document.getElementById("itemForm").onsubmit=e=>{
   अगर वही Code दोबारा आया,
   तो नया Item नहीं बनेगा।
   */
+    if(!Array.isArray(existing.entries)){
+   existing.entries=[];
+  }
+
+  existing.entries.push({
+   dateTime:new Date().toISOString(),
+   qty:qtyValue,
+   gross:grossValue,
+   net:netValue,
+   buy:buyValue,
+   sell:sellValue
+  });
 
   existing.qty=
    Number(existing.qty||0)+qtyValue;
