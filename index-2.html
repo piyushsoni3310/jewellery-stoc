@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#17365d">
+<title>ज्वेलरी स्टॉक मैनेजर</title>
+<link rel="manifest" href="manifest.json"><link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<style>
+*{box-sizing:border-box}
+:root{--black:#090909;--gold:#d4af37;--gold2:#f3d878;--cream:#f7f2e5}
+body{margin:0;font-family:Arial,sans-serif;background:linear-gradient(135deg,#f8f4e9,#ece6d7);color:#222}
+header{background:linear-gradient(135deg,#070707,#201d14);color:#fff;padding:18px 16px;position:sticky;top:0;z-index:10;border-bottom:1px solid #8f6f18;box-shadow:0 3px 15px #0004}
+header h1{margin:0;font-size:22px;color:var(--gold2)} header p{margin:5px 0 0;color:#ddd;font-size:13px}
+nav{display:flex;gap:8px;overflow:auto;padding:10px;background:#101010;position:sticky;top:76px;z-index:9;border-bottom:1px solid #8f6f18}
+nav button{border:1px solid #444;padding:10px 13px;border-radius:20px;background:#222;color:#eee;white-space:nowrap}
+nav button.active{background:linear-gradient(135deg,var(--gold),#a77d18);color:#111;border-color:var(--gold)}
+main{padding:14px;max-width:950px;margin:auto}.page{display:none}.page.active{display:block}
+.cards,.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.card,.form{background:#fff;border:1px solid #dfd2ad;border-radius:14px;padding:14px;box-shadow:0 3px 12px #00000012}
+.card small{color:#666}.card strong{display:block;font-size:20px;margin-top:6px}
+.gold{border-left:5px solid var(--gold)}.silver{border-left:5px solid #888}
+h2{font-size:19px;margin:14px 0;border-left:4px solid var(--gold);padding-left:9px}
+label{font-size:13px;color:#555}input,select{width:100%;padding:11px;margin-top:5px;border:1px solid #d7ceb5;border-radius:9px;background:#fff}
+input:focus,select:focus{outline:2px solid #d4af3740;border-color:var(--gold)}
+.full{grid-column:1/-1}.btn{width:100%;border:0;padding:12px;border-radius:10px;background:linear-gradient(135deg,var(--gold),#a77d18);color:#111;font-weight:bold;margin-top:12px}
+.empty{color:#777;text-align:center;padding:20px;background:#fff;border:1px solid #dfd2ad;border-radius:12px}
+.note{font-size:12px;color:#665b3c;background:#fff8df;border:1px solid #e4d39d;padding:10px;border-radius:10px;margin-top:10px}
+.success{background:#e8f7ed;color:#16733a;padding:10px;border-radius:10px;margin-top:10px;display:none}
+table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;font-size:12px}
+th,td{padding:9px;border-bottom:1px solid #eee;text-align:left}th{background:#151515;color:var(--gold2)}
+.tablewrap{overflow:auto;border-radius:12px}.entry{background:#f8f5ec;padding:11px;border-radius:10px;margin-top:8px;border:1px solid #eadfbe}
+.folder{background:#fff;border:1px solid #dfd2ad;border-radius:12px;margin:9px 0;overflow:hidden}.folderhead{background:#171717;color:var(--gold2);padding:13px;cursor:pointer}.folderbody{display:none;padding:10px 12px}.folderbody.open{display:block}
+.smallbtn{border:0;padding:7px 10px;border-radius:8px;background:#171717;color:var(--gold2);margin:3px}.smallbtn.red{background:#b52b2b;color:#fff}
+@media(max-width:600px){.grid{grid-template-columns:1fr}.cards{grid-template-columns:1fr 1fr}table{min-width:700px}}
+</style>
+</head>
+<body>
+<header><h1>💎 ज्वेलरी स्टॉक मैनेजर</h1><p>स्टॉक • बिक्री • Daily History • Backup</p></header>
+<nav>
+<button class="active" onclick="page('home',this)">🏠 डैशबोर्ड</button><button onclick="page('gold',this)">🟡 सोना</button><button onclick="page('silver',this)">⚪ चाँदी</button><button onclick="page('add',this)">➕ आइटम</button><button onclick="page('sales',this)">💰 बिक्री</button><button onclick="page('history',this)">📅 हिस्ट्री</button><button onclick="page('tools',this)">⚙️ Backup</button>
+</nav>
+<main>
+
+<section id="home" class="page active">
+<h2>आज का हिसाब</h2>
+<div class="cards">
+<div class="card gold"><small>सोना — बचा Net</small><strong id="gw">0.000 g</strong></div>
+<div class="card silver"><small>चाँदी — बचा Net</small><strong id="sw">0.000 g</strong></div>
+<div class="card green"><small>आज आया माल</small><strong id="tin">0.000 g</strong></div>
+<div class="card"><small>आज की Qty In</small><strong id="tiq">0</strong></div>
+<div class="card red"><small>आज की बिक्री</small><strong id="ts">₹0</strong></div>
+<div class="card"><small>आज Qty Sold</small><strong id="tsq">0</strong></div>
+</div>
+<h2>🔎 Item Search</h2><div class="search"><input id="qs" placeholder="Code या नाम लिखें" oninput="quick()"></div><div id="qr" class="empty">Code/नाम लिखकर खोजें।</div>
+<h2>🧾 हाल की बिक्री</h2><div id="recent"></div>
+</section>
+
+<section id="gold" class="page"><h2>🟡 सोने का स्टॉक</h2><div id="goldTable"></div></section>
+<section id="silver" class="page"><h2>⚪ चाँदी का स्टॉक</h2><div id="silverTable"></div></section>
+
+<section id="add" class="page">
+<h2>➕ नया माल / Stock In</h2>
+<div class="note">एक Code का एक Item रहेगा। वही Code दोबारा डालने पर नई अलग Entry बनेगी। हर Entry का Date + Time अलग सेव होगा।</div>
+<form id="itemForm" class="form"><div class="grid">
+<div><label>धातु</label><select id="metal"><option value="Gold">सोना</option><option value="Silver">चाँदी</option></select></div>
+<div><label>Code</label><input id="code" list="codes" required placeholder="G001"><datalist id="codes"></datalist></div>
+<div><label>नाम</label><input id="name" required placeholder="अंगूठी"></div><div><label>श्रेणी</label><input id="cat" placeholder="Ring / Chain"></div>
+<div><label>शुद्धता</label><select id="purity"><option>22K</option><option>18K</option><option>24K</option><option>925</option><option>अन्य</option></select></div>
+<div><label>Qty</label><input id="qty" type="number" min="0" value="1"></div>
+<div><label>Gross Weight (g)</label><input id="gross" type="number" min="0" step=".001" value="0"></div><div><label>Net Weight (g)</label><input id="net" type="number" min="0" step=".001" value="0"></div>
+<div><label>खरीद Rate</label><input id="buy" type="number" min="0" step=".01" value="0"></div><div><label>बिक्री Rate</label><input id="sell" type="number" min="0" step=".01" value="0"></div>
+</div><button class="btn">📥 Stock में जोड़ें</button><div id="ok" class="success"></div></form>
+<h2>📚 Items + Entry History</h2><div id="library"></div>
+</section>
+
+<section id="sales" class="page">
+<h2>💰 बिक्री दर्ज करें</h2>
+<form id="saleForm" class="form"><div class="grid">
+<div><label>Date</label><input id="sdate" type="date" required></div><div><label>Time</label><input id="stime" type="time" required></div>
+<div><label>Code</label><input id="scode" list="saleCodes" required placeholder="G001"><datalist id="saleCodes"></datalist></div>
+<div><label>Qty</label><input id="sq" type="number" min="1" value="1"></div>
+<div><label>Gross Weight (g)</label><input id="sg" type="number" min="0" step=".001" value="0"></div><div><label>Net Weight (g)</label><input id="sn" type="number" min="0" step=".001" value="0"></div>
+<div><label>बिक्री Rate</label><input id="sr" type="number" min="0" step=".01" value="0"></div><div><label>Bill No.</label><input id="bill" placeholder="B001"></div>
+<div><label>ग्राहक</label><input id="cust" placeholder="नाम"></div><div><label>नोट</label><input id="snote" placeholder="नोट"></div>
+</div><button class="btn">💰 बिक्री सेव करें</button></form>
+<h2>बिक्री रिकॉर्ड</h2><div id="salesTable"></div>
+</section>
+
+<section id="history" class="page">
+<h2>📅 Date-wise Daily History</h2>
+<div class="search"><div class="grid"><div><label>तारीख</label><input id="hdate" type="date" onchange="history()"></div><div><label>Code / Name</label><input id="hsearch" placeholder="जैसे T2" oninput="history()"></div></div><button class="btn gray" onclick="clearH()">सभी तारीखें दिखाएँ</button></div>
+<div class="note">हर तारीख एक Folder की तरह है। खोलने पर उस दिन आया माल और बिकी बिक्री अलग दिखेगी।</div><div id="historyList"></div>
+</section>
+
+<section id="tools" class="page">
+<h2>⚙️ Backup / Restore</h2>
+<div class="note">Backup JSON file सुरक्षित रखें। बाद में इसी ऐप में Restore करके data वापस ला सकते हैं।</div>
+<div class="form"><button class="btn" onclick="backup()">📤 Backup Download</button><input id="restore" type="file" accept=".json" style="display:none" onchange="restore(event)"><button class="btn gray" onclick="document.getElementById('restore').click()">📥 Backup Restore</button><hr><button class="btn red" onclick="wipe()">⚠️ पूरा Data Delete</button></div>
+</section>
+</main>
+
+<script>
+const KEY="jewellery_hindi_v2";
+let db=load();
+function emptyDB(){return{items:[],sales:[]}}
+function load(){
+ try{
+  let d=localStorage.getItem(KEY)||localStorage.getItem("jewellery_hindi_v1");
+  return norm(d?JSON.parse(d):emptyDB());
+ }catch(e){return emptyDB()}
+}
+function norm(d){
+ d.items=Array.isArray(d.items)?d.items:[];d.sales=Array.isArray(d.sales)?d.sales:[];
+ d.items.forEach(x=>{
+  x.code=String(x.code||"").toUpperCase();x.qty=+x.qty||0;x.gross=+x.gross||0;x.net=+x.net||0;
+  x.entries=Array.isArray(x.entries)?x.entries:[];
+  if(!x.entries.length&&(x.qty||x.gross||x.net))x.entries=[{dateTime:x.createdAt||new Date().toISOString(),qty:x.qty,gross:x.gross,net:x.net,buy:+x.buy||0,sell:+x.sell||0}];
+  x.entries.forEach(e=>{e.dateTime=e.dateTime||new Date().toISOString();e.qty=+e.qty||0;e.gross=+e.gross||0;e.net=+e.net||0});
+ });
+ d.sales.forEach(s=>{s.code=String(s.code||"").toUpperCase();if(!s.dateTime)s.dateTime=(s.date||today())+"T12:00:00"});
+ return d
+}
+function save(){localStorage.setItem(KEY,JSON.stringify(db));render()}
+function today(){let d=new Date();return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())}
+function pad(n){return String(n).padStart(2,"0")}
+function now(){let d=new Date();return{date:today(),time:pad(d.getHours())+":"+pad(d.getMinutes())}}
+function fmt(v){let d=new Date(v);return isNaN(d)?"-":d.toLocaleString("en-IN",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit",hour12:true})}
+function day(v){return new Date(v).toLocaleDateString("en-CA")}
+function g(n){return(+n||0).toFixed(3)+" g"}
+function m(n){return"₹"+(+n||0).toLocaleString("en-IN",{maximumFractionDigits:2})}
+function esc(s){return String(s??"").replace(/[&<>"']/g,a=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[a]))}
+function find(c){return db.items.find(x=>x.code===String(c).trim().toUpperCase())}
+function page(id,b){document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));document.getElementById(id).classList.add("active");document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active"));b.classList.add("active");render()}
+function options(){return db.items.map(x=>`<option value="${esc(x.code)}">${esc(x.name)} — ${x.metal==="Gold"?"सोना":"चाँदी"}</option>`).join("")}
+
+document.getElementById("itemForm").onsubmit=e=>{
+ e.preventDefault();let code=document.getElementById("code").value.trim().toUpperCase(),q=+document.getElementById("qty").value||0,gr=+document.getElementById("gross").value||0,ne=+document.getElementById("net").value||0;
+ if(!code||q<=0&&gr<=0&&ne<=0)return alert("Code और Qty/Weight डालें।");
+ let x=find(code),v={metal:metal.value,name:name.value.trim(),category:cat.value.trim(),purity:purity.value,buy:+buy.value||0,sell:+sell.value||0},dt=new Date().toISOString();
+ if(x){x.entries.push({dateTime:dt,qty:q,gross:gr,net:ne,buy:v.buy,sell:v.sell});x.qty+=q;x.gross+=gr;x.net+=ne;if(v.buy)x.buy=v.buy;if(v.sell)x.sell=v.sell}
+ else db.items.push({...v,code,qty:q,gross:gr,net:ne,entries:[{dateTime:dt,qty:q,gross:gr,net:ne,buy:v.buy,sell:v.sell}]});
+ save();ok.style.display="block";ok.innerHTML="✅ नई अलग Entry सेव हुई<br>📅 "+fmt(dt);e.target.reset();qty.value=1;gross.value=0;net.value=0;buy.value=0;sell.value=0;
+};
+code.oninput=()=>{let x=find(code.value);if(x){name.value=x.name;cat.value=x.category||"";purity.value=x.purity||"22K";metal.value=x.metal;buy.value=x.buy||0;sell.value=x.sell||0}}
+scode.oninput=()=>{let x=find(scode.value);if(x)sr.value=x.sell||0};
+
+function editEntry(code,i){
+ let x=find(code),e=x?.entries[i];if(!e)return;
+ let d=new Date(e.dateTime),date=prompt("Date (YYYY-MM-DD)",d.toLocaleDateString("en-CA")),time=prompt("Time (HH:MM)",pad(d.getHours())+":"+pad(d.getMinutes()));
+ if(!date||!time)return;let nd=new Date(date+"T"+time);if(isNaN(nd))return alert("गलत Date/Time");
+ e.dateTime=nd.toISOString();save();alert("✅ Date + Time बदल गया।")
+}
+function delEntry(code,i){
+ let x=find(code),e=x?.entries[i];if(!e)return;
+ if(!confirm("यह Entry Delete करें?
+"+fmt(e.dateTime)+"
+Qty: "+e.qty+"
+Net: "+g(e.net)))return;
+ x.qty=Math.max(0,x.qty-e.qty);x.gross=Math.max(0,x.gross-e.gross);x.net=Math.max(0,x.net-e.net);x.entries.splice(i,1);save()
+}
+function delItem(code){let i=db.items.findIndex(x=>x.code===code);if(i>=0&&confirm("पूरा Item और History Delete करें?")){db.items.splice(i,1);save()}}
+function setNow(){let n=now();sdate.value=n.date;stime.value=n.time}setNow();
+
+document.getElementById("saleForm").onsubmit=e=>{
+ e.preventDefault();let x=find(scode.value),q=+sq.value||0,gr=+sg.value||0,ne=+sn.value||0;
+ if(!x)return alert("Code नहीं मिला।");if(q>x.qty)return alert("Available Qty: "+x.qty);if(gr>x.gross)return alert("Available Gross: "+g(x.gross));if(ne>x.net)return alert("Available Net: "+g(x.net));
+ x.qty-=q;x.gross-=gr;x.net-=ne;let dt=new Date(sdate.value+"T"+stime.value);
+ db.sales.unshift({dateTime:dt.toISOString(),date:sdate.value,code:x.code,name:x.name,qty:q,gross:gr,net:ne,rate:+sr.value||0,bill:bill.value,customer:cust.value,note:snote.value,metal:x.metal,total:q*(+sr.value||0)});
+ save();e.target.reset();setNow();sq.value=1;alert("✅ बिक्री Date + Time के साथ सेव हुई।")
+};
+function delSale(i){
+ let s=db.sales[i];if(!s||!confirm("Sale Delete करें और Stock वापस जोड़ें?"))return;
+ let x=find(s.code);if(x){x.qty+=+s.qty||0;x.gross+=+s.gross||0;x.net+=+s.net||0}db.sales.splice(i,1);save()
+}
+
+function stock(metal){
+ let a=db.items.filter(x=>x.metal===metal);if(!a.length)return'<div class="empty">कोई Item नहीं है।</div>';
+ return'<div class="tablewrap"><table><tr><th>Code</th><th>नाम</th><th>Purity</th><th>Qty</th><th>Gross</th><th>Net</th><th>Rate</th><th>Value</th></tr>'+a.map(x=>`<tr><td><b>${esc(x.code)}</b></td><td>${esc(x.name)}</td><td>${esc(x.purity||"-")}</td><td>${x.qty}</td><td>${g(x.gross)}</td><td>${g(x.net)}</td><td>${m(x.sell)}</td><td>${m(x.qty*x.sell)}</td></tr>`).join("")+'</table></div>'
+}
+function salesHTML(){
+ if(!db.sales.length)return'<div class="empty">कोई बिक्री नहीं है।</div>';
+ return'<div class="tablewrap"><table><tr><th>Date + Time</th><th>Code</th><th>नाम</th><th>Qty</th><th>Net</th><th>Rate</th><th>Total</th><th>Bill</th><th>Customer</th><th>Action</th></tr>'+db.sales.map((s,i)=>`<tr><td>${fmt(s.dateTime)}</td><td>${esc(s.code)}</td><td>${esc(s.name)}</td><td>${s.qty}</td><td>${g(s.net)}</td><td>${m(s.rate)}</td><td>${m(s.total)}</td><td>${esc(s.bill||"-")}</td><td>${esc(s.customer||"-")}</td><td><button class="smallbtn red" onclick="delSale(${i})">Delete</button></td></tr>`).join("")+'</table></div>'
+}
+function library(){
+ if(!db.items.length)return'<div class="empty">कोई Item नहीं है।</div>';
+ return db.items.map(x=>`<div class="card" style="margin-bottom:10px"><b>${esc(x.code)} — ${esc(x.name)}</b> <button class="smallbtn red" onclick="delItem('${esc(x.code)}')">🗑️ Item</button><br><small>${x.metal==="Gold"?"🟡 सोना":"⚪ चाँदी"} · ${esc(x.purity||"-")}</small><hr><b>कुल:</b> Qty ${x.qty} · Gross ${g(x.gross)} · Net ${g(x.net)}<h3>📋 Entries (${x.entries.length})</h3>${x.entries.map((e,i)=>`<div class="entry in"><b>Entry ${i+1}</b><br>📅 ${fmt(e.dateTime)}<br>Qty <b>${e.qty}</b> · Gross <b>${g(e.gross)}</b> · Net <b>${g(e.net)}</b><br><button class="smallbtn" onclick="editEntry('${esc(x.code)}',${i})">✏️ Date/Time</button><button class="smallbtn red" onclick="delEntry('${esc(x.code)}',${i})">🗑️ Delete</button></div>`).join("")}</div>`).join("")
+}
+
+function dates(){let s=new Set();db.items.forEach(x=>x.entries.forEach(e=>s.add(day(e.dateTime))));db.sales.forEach(x=>s.add(day(x.dateTime)));return[...s].sort().reverse()}
+function daily(d,q){
+ q=(q||"").toUpperCase();let ins=[],outs=[];
+ db.items.forEach(x=>x.entries.forEach((e,i)=>{if(day(e.dateTime)===d&&(!q||x.code.includes(q)||String(x.name).toUpperCase().includes(q)))ins.push({x,e,i})}));
+ db.sales.forEach((s,i)=>{if(day(s.dateTime)===d&&(!q||s.code.includes(q)||String(s.name).toUpperCase().includes(q)))outs.push({s,i})});
+ return{ins,outs}
+}
+function history(){
+ let ds=dates(),pick=hdate.value,q=hsearch.value;if(pick)ds=ds.filter(d=>d===pick);
+ if(!ds.length){historyList.innerHTML='<div class="empty">History नहीं मिली।</div>';return}
+ historyList.innerHTML=ds.map((d,k)=>{let z=daily(d,q),iq=z.ins.reduce((a,o)=>a+o.e.qty,0),inn=z.ins.reduce((a,o)=>a+o.e.net,0),sq=z.outs.reduce((a,o)=>a+o.s.qty,0),sn=z.outs.reduce((a,o)=>a+o.s.net,0),sm=z.outs.reduce((a,o)=>a+o.s.total,0);
+ return`<div class="folder"><div class="folderhead" onclick="document.getElementById('f${k}').classList.toggle('open')"><b>📁 ${d}</b><br><span class="pill">📥 Qty ${iq}</span><span class="pill">📥 Net ${g(inn)}</span><span class="pill">💰 Sale ${m(sm)}</span></div><div id="f${k}" class="folderbody ${k===0?'open':''}"><h3>📥 आया माल</h3>${z.ins.length?z.ins.map(o=>`<div class="entry in"><b>${esc(o.x.code)} — ${esc(o.x.name)}</b><br>🕒 ${fmt(o.e.dateTime)}<br>Qty ${o.e.qty} · Gross ${g(o.e.gross)} · Net ${g(o.e.net)}</div>`).join(""):'<div class="empty">कोई Stock In नहीं।</div>'}<h3>💰 बिकी बिक्री</h3>${z.outs.length?z.outs.map(o=>`<div class="entry out"><b>${esc(o.s.code)} — ${esc(o.s.name)}</b><br>🕒 ${fmt(o.s.dateTime)}<br>Qty ${o.s.qty} · Net ${g(o.s.net)} · Total ${m(o.s.total)}</div>`).join(""):'<div class="empty">कोई Sale नहीं।</div>'}<hr><div class="stats"><div class="card"><small>बिका Net</small><strong>${g(sn)}</strong></div><div class="card"><small>बिकी Qty</small><strong>${sq}</strong></div></div></div></div>`}).join("")
+}
+function clearH(){hdate.value="";hsearch.value="";history()}
+
+function quick(){
+ let q=qs.value.trim().toUpperCase();if(!q){qr.innerHTML='<div class="empty">Code/नाम लिखकर खोजें।</div>';return}
+ let a=db.items.filter(x=>x.code.includes(q)||String(x.name).toUpperCase().includes(q));qr.innerHTML=a.length?a.map(x=>`<div class="card" style="margin-bottom:8px"><b>${esc(x.code)} — ${esc(x.name)}</b><br>कुल Qty ${x.qty} · Net ${g(x.net)}<br>Entries: ${x.entries.length}</div>`).join(""):'<div class="empty">Item नहीं मिला।</div>'
+}
+
+function backup(){
+ let b=new Blob([JSON.stringify({app:"Jewellery Stock Manager",version:2,db},null,2)],{type:"application/json"}),u=URL.createObjectURL(b),a=document.createElement("a");a.href=u;a.download="jewellery-backup-"+today()+".json";a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)
+}
+function restore(e){
+ let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{let o=JSON.parse(r.result),d=o.db||o;if(!d.items||!d.sales)throw 0;if(confirm("Current Data replace होगा। Continue?")){db=norm(d);save();alert("✅ Backup Restore हो गया।")}}catch(x){alert("❌ Backup file गलत है।")}e.target.value=""};r.readAsText(f)
+}
+function wipe(){if(confirm("पूरा Data Delete करना है?")&&confirm("Final Confirm: Data हमेशा के लिए मिट जाएगा।")){db=emptyDB();localStorage.removeItem(KEY);localStorage.removeItem("jewellery_hindi_v1");render();alert("Data Delete हो गया।")}}
+
+function render(){
+ codes.innerHTML=options();saleCodes.innerHTML=options();
+ gw.textContent=g(db.items.filter(x=>x.metal==="Gold").reduce((a,x)=>a+x.net,0));sw.textContent=g(db.items.filter(x=>x.metal==="Silver").reduce((a,x)=>a+x.net,0));
+ let z=daily(today(),"");tin.textContent=g(z.ins.reduce((a,o)=>a+o.e.net,0));tiq.textContent=z.ins.reduce((a,o)=>a+o.e.qty,0);ts.textContent=m(z.outs.reduce((a,o)=>a+o.s.total,0));tsq.textContent=z.outs.reduce((a,o)=>a+o.s.qty,0);
+ goldTable.innerHTML=stock("Gold");silverTable.innerHTML=stock("Silver");salesTable.innerHTML=salesHTML();library.innerHTML=library();history();
+ recent.innerHTML=db.sales.length?db.sales.slice(0,5).map(s=>`<div class="card" style="margin-bottom:7px"><b>${esc(s.name)}</b> — ${s.qty} Qty — ${m(s.total)}<br><small>${fmt(s.dateTime)} · ${esc(s.customer||"ग्राहक")}</small></div>`).join(""):'<div class="empty">अभी कोई बिक्री नहीं है।</div>';
+}
+render();
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script>
+</body></html>
