@@ -23,7 +23,99 @@ function editEntry(c,i){let x=find(c),e=x?.entries?.[i];if(!e)return;let v=promp
 function table(m){let q=(document.getElementById(m==='Gold'?'goldSearch':'silverSearch')?.value||'').toLowerCase(),a=db.items.filter(x=>x.metal===m&&(`${x.code} ${x.name} ${x.category}`.toLowerCase().includes(q)));if(!a.length)return '<div class="empty">कोई Item नहीं मिला।</div>';return '<div class="tablewrap"><table><tr><th>Code</th><th>नाम</th><th>श्रेणी</th><th>शुद्धता</th><th>Qty</th><th>Gross</th><th>Net</th><th>Rate</th><th>Value</th></tr>'+a.map(x=>`<tr><td><b>${x.code}</b></td><td>${x.name}</td><td>${x.category||'-'}</td><td>${x.purity}</td><td>${x.qty}</td><td>${grams(x.gross)}</td><td><b>${grams(x.net)}</b></td><td>${money(x.sell)}</td><td>${money(x.qty*x.sell)}</td></tr>`).join('')+'</table></div>'}
 function sales(){let q=(document.getElementById('saleSearch')?.value||'').toLowerCase(),a=db.sales.filter(x=>`${x.code} ${x.name} ${x.bill} ${x.customer}`.toLowerCase().includes(q));if(!a.length)return '<div class="empty">कोई बिक्री नहीं मिली।</div>';return '<div class="tablewrap"><table><tr><th>Date</th><th>Time</th><th>धातु</th><th>Code</th><th>नाम</th><th>Qty</th><th>Net</th><th>Rate</th><th>Total</th><th>Bill</th><th>ग्राहक</th></tr>'+a.map(s=>`<tr><td>${s.date}</td><td>${fmt(s.dateTime)}</td><td>${s.metal==='Gold'?'🟡':'⚪'}</td><td>${s.code}</td><td>${s.name}</td><td>${s.qty}</td><td>${grams(s.net)}</td><td>${money(s.rate)}</td><td>${money(s.total)}</td><td>${s.bill||'-'}</td><td>${s.customer||'-'}</td></tr>`).join('')+'</table></div>'}
 function render(){let opts=db.items.map(x=>`<option value="${x.code}">${x.name} — ${x.metal==='Gold'?'सोना':'चाँदी'}</option>`).join('');itemCodes.innerHTML=saleItemCodes.innerHTML=opts;goldWeight.textContent=grams(db.items.filter(x=>x.metal==='Gold').reduce((a,x)=>a+(+x.net||0),0));silverWeight.textContent=grams(db.items.filter(x=>x.metal==='Silver').reduce((a,x)=>a+(+x.net||0),0));itemCount.textContent=db.items.length;totalSales.textContent=money(db.sales.reduce((a,x)=>a+(+x.total||0),0));goldTable.innerHTML=table('Gold');silverTable.innerHTML=table('Silver');salesTable.innerHTML=sales();recent.innerHTML=db.sales.length?db.sales.slice(0,5).map(s=>`<div class="card" style="margin-bottom:8px"><b>${s.name}</b> — ${s.qty} Qty — ${money(s.total)}<br><small>${s.date} · ${fmt(s.dateTime)} · ${s.customer||'ग्राहक'}</small></div>`).join(''):'अभी कोई बिक्री नहीं है।';itemLibrary.innerHTML=db.items.length?db.items.map(x=>`<div class="box"><div style="display:flex;justify-content:space-between;gap:8px"><div><b style="font-size:17px">${x.code} — ${x.name}</b><br><span class="badge">${x.metal==='Gold'?'🟡 सोना':'⚪ चाँदी'} · ${x.purity}</span></div><button class="btn2 danger" onclick="deleteItem('${x.code}')">🗑 Delete Item</button></div><hr style="border-color:var(--l)"><b>Current Stock:</b> Qty ${x.qty} · Gross ${grams(x.gross)} · Net ${grams(x.net)}<h3>📋 Entry History (${x.entries?.length||0})</h3>${(x.entries||[]).map((e,i)=>`<div class="entry"><b>Entry ${i+1}</b><br>📅 ${fmt(e.dateTime)}<br>Qty: <b>${e.qty}</b> · Gross: <b>${grams(e.gross)}</b> · Net: <b>${grams(e.net)}</b><div class="row"><button class="btn2" onclick="editEntry('${x.code}',${i})">✏ Edit Date/Time</button><button class="btn2 danger" onclick="deleteEntry('${x.code}',${i})">🗑 Delete Entry</button></div></div>`).join('')}</div>`).join(''):'<div class="empty">अभी कोई Item सेव नहीं है।</div>'}
-function renderHistory(){let out=historyList,sel=historyDate.value,f=historyFilter.value,ev=[];db.items.forEach(x=>(x.entries||[]).forEach(e=>{if((!sel||day(e.dateTime)===sel)&&(f==='all'||f==='in'))ev.push({t:'in',d:day(e.dateTime),time:e.dateTime,x,e})}));db.sales.forEach(s=>{if((!sel||s.date===sel)&&(f==='all'||f==='out'))ev.push({t:'out',d:s.date,time:s.dateTime,s}));ev.sort((a,b)=>new Date(b.time)-new Date(a.time));if(!ev.length){out.innerHTML='<div class="empty">इस तारीख की कोई History नहीं है।</div>';return}let gs={};ev.forEach(e=>(gs[e.d]??=[]).push(e));out.innerHTML=Object.keys(gs).sort().reverse().map(d=>{let a=gs[d],ins=a.filter(x=>x.t==='in'),outs=a.filter(x=>x.t==='out');return `<div style="margin-bottom:15px"><h3 style="background:#1b180f;border:1px solid #4b3b14;border-radius:10px;padding:10px">📅 ${d}</h3><div class="summary"><div>📥 माल आया<br><b>${ins.length} Entries · ${grams(ins.reduce((z,x)=>z+(+x.e.net||0),0))}</b></div><div>📤 माल बिका<br><b>${outs.length} Sales · ${grams(outs.reduce((z,x)=>z+(+x.s.net||0),0))}</b></div><div>💰 Sale Value<br><b>${money(outs.reduce((z,x)=>z+(+x.s.total||0),0))}</b></div></div>${a.map(x=>x.t==='in'?`<div class="entry">📥 <b>Stock आया</b> · ${x.x.code} — ${x.x.name}<br>🕒 ${fmt(x.time)}<br>Qty ${x.e.qty} · Gross ${grams(x.e.gross)} · Net ${grams(x.e.net)}</div>`:`<div class="entry">📤 <b>Sale</b> · ${x.s.code} — ${x.s.name}<br>🕒 ${fmt(x.time)}<br>Qty ${x.s.qty} · Net ${grams(x.s.net)} · ${money(x.s.total)} · Bill ${x.s.bill||'-'}</div>`).join('')}</div>`}).join('')}
+function renderHistory(){
+  let out=document.getElementById('historyList');
+  let sel=document.getElementById('historyDate').value;
+  let f=document.getElementById('historyFilter').value;
+  let ev=[];
+
+  db.items.forEach(x=>{
+    (x.entries||[]).forEach(e=>{
+      if((!sel||day(e.dateTime)===sel)&&(f==='all'||f==='in')){
+        ev.push({
+          t:'in',
+          d:day(e.dateTime),
+          time:e.dateTime,
+          x:x,
+          e:e
+        });
+      }
+    });
+  });
+
+  db.sales.forEach(s=>{
+    if((!sel||s.date===sel)&&(f==='all'||f==='out')){
+      ev.push({
+        t:'out',
+        d:s.date,
+        time:s.dateTime,
+        s:s
+      });
+    }
+  });
+
+  ev.sort((a,b)=>new Date(b.time)-new Date(a.time));
+
+  if(!ev.length){
+    out.innerHTML='<div class="empty">इस तारीख की कोई History नहीं है।</div>';
+    return;
+  }
+
+  let gs={};
+
+  ev.forEach(e=>{
+    if(!gs[e.d]) gs[e.d]=[];
+    gs[e.d].push(e);
+  });
+
+  out.innerHTML=Object.keys(gs).sort().reverse().map(d=>{
+    let a=gs[d];
+    let ins=a.filter(x=>x.t==='in');
+    let outs=a.filter(x=>x.t==='out');
+
+    return `
+      <div style="margin-bottom:15px">
+        <h3 style="background:#1b180f;border:1px solid #4b3b14;border-radius:10px;padding:10px">
+          📅 ${d}
+        </h3>
+
+        <div class="summary">
+          <div>
+            📥 माल आया<br>
+            <b>${ins.length} Entries · ${grams(ins.reduce((z,x)=>z+(+x.e.net||0),0))}</b>
+          </div>
+
+          <div>
+            📤 माल बिका<br>
+            <b>${outs.length} Sales · ${grams(outs.reduce((z,x)=>z+(+x.s.net||0),0))}</b>
+          </div>
+
+          <div>
+            💰 Sale Value<br>
+            <b>${money(outs.reduce((z,x)=>z+(+x.s.total||0),0))}</b>
+          </div>
+        </div>
+
+        ${a.map(x=>x.t==='in'
+          ? `
+            <div class="entry">
+              📥 <b>Stock आया</b> · ${x.x.code} — ${x.x.name}<br>
+              🕒 ${fmt(x.time)}<br>
+              Qty ${x.e.qty} · Gross ${grams(x.e.gross)} · Net ${grams(x.e.net)}
+            </div>
+          `
+          : `
+            <div class="entry">
+              📤 <b>Sale</b> · ${x.s.code} — ${x.s.name}<br>
+              🕒 ${fmt(x.time)}<br>
+              Qty ${x.s.qty} · Net ${grams(x.s.net)} · ${money(x.s.total)} · Bill ${x.s.bill||'-'}
+            </div>
+          `
+        ).join('')}
+      </div>
+    `;
+  }).join('');
+}let out=historyList,sel=historyDate.value,f=historyFilter.value,ev=[];db.items.forEach(x=>(x.entries||[]).forEach(e=>{if((!sel||day(e.dateTime)===sel)&&(f==='all'||f==='in'))ev.push({t:'in',d:day(e.dateTime),time:e.dateTime,x,e})}));db.sales.forEach(s=>{if((!sel||s.date===sel)&&(f==='all'||f==='out'))ev.push({t:'out',d:s.date,time:s.dateTime,s}));ev.sort((a,b)=>new Date(b.time)-new Date(a.time));if(!ev.length){out.innerHTML='<div class="empty">इस तारीख की कोई History नहीं है।</div>';return}let gs={};ev.forEach(e=>(gs[e.d]??=[]).push(e));out.innerHTML=Object.keys(gs).sort().reverse().map(d=>{let a=gs[d],ins=a.filter(x=>x.t==='in'),outs=a.filter(x=>x.t==='out');return `<div style="margin-bottom:15px"><h3 style="background:#1b180f;border:1px solid #4b3b14;border-radius:10px;padding:10px">📅 ${d}</h3><div class="summary"><div>📥 माल आया<br><b>${ins.length} Entries · ${grams(ins.reduce((z,x)=>z+(+x.e.net||0),0))}</b></div><div>📤 माल बिका<br><b>${outs.length} Sales · ${grams(outs.reduce((z,x)=>z+(+x.s.net||0),0))}</b></div><div>💰 Sale Value<br><b>${money(outs.reduce((z,x)=>z+(+x.s.total||0),0))}</b></div></div>${a.map(x=>x.t==='in'?`<div class="entry">📥 <b>Stock आया</b> · ${x.x.code} — ${x.x.name}<br>🕒 ${fmt(x.time)}<br>Qty ${x.e.qty} · Gross ${grams(x.e.gross)} · Net ${grams(x.e.net)}</div>`:`<div class="entry">📤 <b>Sale</b> · ${x.s.code} — ${x.s.name}<br>🕒 ${fmt(x.time)}<br>Qty ${x.s.qty} · Net ${grams(x.s.net)} · ${money(x.s.total)} · Bill ${x.s.bill||'-'}</div>`).join('')}</div>`}).join('')}
 function exportData(){let b=new Blob([JSON.stringify(db,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='jewellery-stock-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click()};function importData(){let f=importFile.files[0];if(!f)return alert('पहले backup file चुनें।');let r=new FileReader();r.onload=()=>{try{let x=JSON.parse(r.result);if(!Array.isArray(x.items)||!Array.isArray(x.sales))throw 0;db=x;save();alert('✓ Backup restore हो गया।')}catch(e){alert('गलत backup file है।')}};r.readAsText(f)}function clearAll(){if(confirm('⚠ पूरा Stock और Sales Data delete करना है?')){db={items:[],sales:[]};save();alert('पूरा data delete हो गया।')}}
 render();renderHistory();if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script></body></html>
